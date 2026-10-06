@@ -87,7 +87,7 @@ def start_server_thread(
     """
     device = build_device(drive, slave_id)
     ready = threading.Event()
-    state: dict[str, ModbusTcpServer] = {}
+    state: dict[str, object] = {}
 
     def _run() -> None:
         loop = asyncio.new_event_loop()
@@ -103,12 +103,21 @@ def start_server_thread(
 
         try:
             loop.run_until_complete(_serve())
+        except Exception as exc:
+            state["error"] = exc
         finally:
+            ready.set()
             loop.close()
 
     thread = threading.Thread(target=_run, daemon=True)
     thread.start()
-    ready.wait(timeout=5)
+    ready_in_time = ready.wait(timeout=5)
+
+    error = state.get("error")
+    if error is not None:
+        raise RuntimeError(f"Modbus server failed to start on {host}:{port}") from error
+    if not ready_in_time:
+        raise RuntimeError(f"Modbus server did not become ready within timeout on {host}:{port}")
 
     def stop() -> None:
         server = state.get("server")

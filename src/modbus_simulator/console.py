@@ -18,6 +18,13 @@ class SimulatorConsole(cmd.Cmd):
         super().__init__()
         self.drive = drive
 
+    def onecmd(self, line: str) -> bool:
+        try:
+            return super().onecmd(line)
+        except ValueError as exc:
+            print(f"error: {exc}")
+            return False
+
     def do_status(self, _arg: str) -> None:
         """status - show the current drive state, registers, and I/O."""
         drive = self.drive

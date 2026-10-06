@@ -3,6 +3,7 @@
 import argparse
 import logging
 import signal
+import sys
 import threading
 
 from .console import SimulatorConsole
@@ -52,7 +53,11 @@ def main(argv: list[str] | None = None) -> None:
     drive = Drive(ramp_hz_per_s=args.speed_ramp_hz_per_s)
     drive.set_speed_reference(args.initial_speed_ref)
 
-    _thread, stop = start_server_thread(args.host, args.port, drive, slave_id=args.slave_id)
+    try:
+        _thread, stop = start_server_thread(args.host, args.port, drive, slave_id=args.slave_id)
+    except RuntimeError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise SystemExit(1) from exc
     print(f"ATV340 simulator listening on {args.host}:{args.port} (slave id {args.slave_id})")
 
     if args.no_console:
