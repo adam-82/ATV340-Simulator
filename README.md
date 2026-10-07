@@ -44,6 +44,46 @@ drops into an interactive console.
 - `reset` — clear the current fault
 - `quit` / `exit` — stop the simulator
 
+## Commissioning CLI tools
+
+`modbus-poll` and `modbus-set` are standalone Modbus TCP *clients* — separate
+processes from the simulator, talking over the wire like a PLC or a
+commissioning laptop would. Point them at this simulator during development,
+or at a real ATV340 drive's IP during commissioning; the register map is the
+real vendor map either way.
+
+| Flag | Default | Description |
+|---|---|---|
+| `--host` | `127.0.0.1` | Modbus server address |
+| `--port` | `5020` | Modbus TCP port |
+| `--slave-id` | `0` | Modbus device/slave id |
+| `--watch` (`modbus-poll` only) | off | Poll continuously until Ctrl+C |
+| `--interval` (`modbus-poll` only) | `1.0` | Seconds between reads in `--watch` mode |
+
+Registers can be addressed by friendly name (`speed_ref`, `status_word`,
+`cmd_word`, `output_freq`, `fault_word`, `digital_inputs`, `digital_outputs`,
+`analog_input_1`, `analog_input_2`, `analog_output_1`), by vendor code
+(`lfr`, `eta`, `cmd`, ...; case-insensitive), or by a raw numeric Modbus
+address (`8502`, `0x2136`) for anything not in the map.
+
+```sh
+# Read one or more registers once
+uv run modbus-poll --port 5020 status_word speed_ref
+
+# Watch output frequency ramp in real time (e.g. against the simulator)
+uv run modbus-poll --port 5020 output_freq --watch --interval 0.5
+
+# Write a register
+uv run modbus-set --port 5020 speed_ref 25.0
+
+# Against real hardware
+uv run modbus-poll --host 10.0.0.5 --port 502 status_word
+uv run modbus-set --host 10.0.0.5 --port 502 cmd_word 0x000F
+```
+
+Connection failures, unknown register names, and Modbus errors are reported
+as a single `error: ...` line on stderr with a non-zero exit code.
+
 ## Register map
 
 Registers and bit layouts are sourced from Schneider Electric's official

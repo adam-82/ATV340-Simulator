@@ -13,6 +13,8 @@ dependencies = [
 
 [project.scripts]
 modbus-simulator = "modbus_simulator:main"
+modbus-poll = "modbus_simulator.poll:main"
+modbus-set = "modbus_simulator.set_register:main"
 
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]
